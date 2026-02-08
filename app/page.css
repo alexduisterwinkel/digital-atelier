@@ -1,0 +1,15 @@
+main {
+    position: relative;
+}
+
+.vanta-bg {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    height: 6000vh;
+}
+
+.r3f-canvas {
+    position: relative;
+    z-index: 1;
+}
