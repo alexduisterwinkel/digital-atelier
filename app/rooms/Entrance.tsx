@@ -36,9 +36,6 @@ export function Entrance({ position }: { position: [number, number, number] }) {
 
         setProgress(progress);
 
-        // camera slowly moves forward
-        camera.position.z = 6 - ease * 1.3;
-
         // breathing motion fades out over time
         const breathStrength = 1 - ease;
 
