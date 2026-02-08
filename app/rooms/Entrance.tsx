@@ -16,7 +16,11 @@ export function Entrance({ position }: { position: [number, number, number] }) {
 
     const { camera, mouse, viewport } = useThree();
 
-    const lightPosition = new THREE.Vector3(0, 0, -10);
+    const lightPosition = useRef(new THREE.Vector3(0,0,-10));
+
+    const raycaster = new THREE.Raycaster();
+    const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 10); // z = -10
+    const intersection = new THREE.Vector3();
 
 
     useFrame((state) => {
@@ -43,24 +47,12 @@ export function Entrance({ position }: { position: [number, number, number] }) {
             Math.sin(state.clock.elapsedTime * 0.4) * 0.05 * breathStrength;
 
         // --- CURSOR LIGHT ---
-        const targetX = mouse.x * viewport.width * 0.3;
-        const targetY = mouse.y * viewport.height * 0.3;
+        raycaster.setFromCamera(mouse, camera);
+        raycaster.ray.intersectPlane(plane, intersection);
 
-        lightRef.current.position.x = THREE.MathUtils.lerp(
-            lightRef.current.position.x,
-            targetX,
-            0.08
-        );
+        lightRef.current.position.lerp(intersection, 0.08);
 
-        lightRef.current.position.y = THREE.MathUtils.lerp(
-            lightRef.current.position.y,
-            targetY,
-            0.08
-        );
-
-        lightRef.current.position.z = -10;
-
-        lightRef.current.getWorldPosition(lightPosition);
+        lightRef.current.getWorldPosition(lightPosition.current);
     });
 
     return (
@@ -72,8 +64,8 @@ export function Entrance({ position }: { position: [number, number, number] }) {
             <group ref={lightRef}>
                 <pointLight intensity={3} distance={25} color="#ffffff" />
                 <mesh>
-                    <sphereGeometry args={[0.35, 32, 32]} />
-                    <meshBasicMaterial color="#ffffff" />
+                    <sphereGeometry args={[1.2, 32, 32]} />
+                    <meshBasicMaterial color="#ffff89" />
                 </mesh>
             </group>
             <IntroText />

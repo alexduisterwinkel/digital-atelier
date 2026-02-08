@@ -11,7 +11,7 @@ export function FogPlane({
                          }: {
     index: number;
     progress: number;
-    lightPosition: THREE.Vector3;
+    lightPosition: React.MutableRefObject<THREE.Vector3>;
 }) {
     const mesh = useRef<THREE.Mesh>(null);
 
@@ -23,7 +23,7 @@ export function FogPlane({
     const lightPos = new THREE.Vector3();
 
     useFrame((state) => {
-        if (!mesh.current) return;
+        if (!mesh.current || !lightPosition.current) return;
 
         const ease = 1 - Math.pow(1 - progress, 3);
         const time = state.clock.elapsedTime;
@@ -52,7 +52,7 @@ export function FogPlane({
 
         // --- LIGHT PENETRATION ---
         mesh.current.getWorldPosition(worldPos);
-        lightPos.copy(lightPosition)
+        lightPos.copy(lightPosition.current)
 
         const distanceToLight = worldPos.distanceTo(lightPos);
 
@@ -63,26 +63,33 @@ export function FogPlane({
             1
         );
 
+        const baseColor = new THREE.Color("#ffff89");
+        const litColor = new THREE.Color("#fff9f9"); // light tint
+
+        const colorMix = 1 - lightClear;
+
         // fog thickens slightly behind light
+
         const behindLight =
             worldPos.z > lightPos.z ? 1 : 0;
-
         const densityBoost = behindLight * 0.25 * (1 - lightClear);
 
         // fade slightly toward end
+
         const material = mesh.current.material as THREE.MeshBasicMaterial;
         material.opacity =
             (0.35 * (1 - ease * 0.5)) *
             (1 - densityBoost * 0.6);
+        material.color.copy(baseColor).lerp(litColor, colorMix);
     });
 
     return (
         <mesh ref={mesh}>
-            <planeGeometry args={[20, 20]} />
+            <sphereGeometry args={[8, 64, 64]} />
             <meshBasicMaterial
-                color="#1a2a44"
+                color="1a2a44"
                 transparent
-                opacity={0.35}
+                opacity={0.8}
                 depthWrite={false}
                 blending={THREE.AdditiveBlending}
             />
