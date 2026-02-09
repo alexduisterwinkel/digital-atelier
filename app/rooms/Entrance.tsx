@@ -57,14 +57,6 @@ export function Entrance({ position }: { position: [number, number, number] }) {
             <FogPlane index={0} progress={progress} lightPosition={lightPosition}/>
             <FogPlane index={1} progress={progress} lightPosition={lightPosition}/>
             <FogPlane index={2} progress={progress} lightPosition={lightPosition}/>
-            {/*<LightSource />*/}
-            <group ref={lightRef}>
-                <pointLight intensity={3} distance={25} color="#ffffff" />
-                <mesh>
-                    <sphereGeometry args={[1.2, 32, 32]} />
-                    <meshBasicMaterial color="#ffff89" />
-                </mesh>
-            </group>
             <IntroText />
         </group>
     );

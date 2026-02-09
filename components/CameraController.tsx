@@ -14,10 +14,35 @@ export function CameraController() {
     const targetZ = useRef(camera.position.z);
     const [scrollY, setScrollY] = useState(0);
 
-    // --- entrance timing  ---
-    const startTime = useRef(0);
-    const entranceFinished = useRef(false);
-    
+    const isCorridor = pathname === "/corridor";
+    const mouseTarget = useRef({ x: 0, y: 0 });
+
+    const lightRef = useRef<THREE.Group>(null);
+
+    useEffect(() => {
+        const handleMouseMove = (e: MouseEvent) => {
+            mouseTarget.current.x =
+                (e.clientX / window.innerWidth - 0.5) * 2;
+
+            mouseTarget.current.y =
+                (e.clientY / window.innerHeight - 0.5) * 2;
+        };
+
+        window.addEventListener("mousemove", handleMouseMove);
+        return () =>
+            window.removeEventListener("mousemove", handleMouseMove);
+    }, []);
+
+    useEffect(() => {
+        if (!isCorridor) return;
+
+        gsap.to(camera.position, {
+            x: 0,
+            y: 0,
+            duration: 1.2,
+            ease: "power2.out",
+        });
+    }, [isCorridor]);
 
     // Listen to page scroll
     useEffect(() => {
@@ -37,63 +62,20 @@ export function CameraController() {
         });
     }, [pathname, camera]);
 
-    useFrame(() => {
-        // optional: subtle floating motion
-        camera.position.y = Math.sin(Date.now() * 0.001) * 0.1;
+    useEffect(() => {
+        if (!isCorridor) return;
 
-        // scroll-driven forward movement
-        const scrollFactor = 0.01; // tweak speed
-        const scrollZ = 5 - scrollY * scrollFactor; // moves toward negative Z
-        camera.position.z = Math.min(scrollZ, targetZ.current); // don’t overshoot GSAP target
-
-        // Room transition trigger: entrance → corridor
-        if (scrollZ <= rooms[1].position[2] + 5 && pathname === "/") {
-            window.history.replaceState(null, "", "/corridor");
-        }
-    });
+        gsap.to(camera.position, {
+            x: 0,
+            y: 0,
+            duration: 1.2,
+            ease: "power2.out",
+        });
+    }, [isCorridor]);
 
     useFrame((state) => {
-        // --- ENTRANCE CHOREOGRAPHY  ---
-        if (!startTime.current) {
-            startTime.current = state.clock.elapsedTime;
-        }
-
-        const t = state.clock.elapsedTime - startTime.current;
-
-        if (t < 3) {
-            const progress = t / 3;
-            const ease = 1 - Math.pow(1 - progress, 3);
-
-            camera.position.z = 6 - ease * 1.3;
-        } else {
-            entranceFinished.current = true;
-        }
-
         // optional: subtle floating motion
         camera.position.y = Math.sin(Date.now() * 0.001) * 0.1;
-
-        // --- SCROLL MOVEMENT  ---
-        if (entranceFinished.current) {
-            const scrollFactor = 0.01;
-            const scrollZ = 5 - scrollY * scrollFactor;
-
-            camera.position.z = Math.min(
-                THREE.MathUtils.lerp(
-                    camera.position.z,
-                    scrollZ,
-                    0.08
-                ),
-                targetZ.current
-            );
-
-            // Room transition trigger: entrance → corridor
-            if (
-                scrollZ <= rooms[1].position[2] + 5 &&
-                pathname === "/"
-            ) {
-                window.history.replaceState(null, "", "/corridor");
-            }
-        }
 
         // --- CURSOR STEERING (ADDED) ---
         const targetX = mouse.x * viewport.width * 0.5;
@@ -109,7 +91,49 @@ export function CameraController() {
             0,
             camera.position.z - 5
         );
+
+        // scroll-driven forward movement
+        const scrollFactor = 0.01; // tweak speed
+        const scrollZ = 5 - scrollY * scrollFactor; // moves toward negative Z
+        camera.position.z = Math.min(scrollZ, targetZ.current); // don’t overshoot GSAP target
+
+        // Room transition trigger: entrance → corridor
+        if (scrollZ <= rooms[1].position[2] + 5 && pathname === "/") {
+            window.history.replaceState(null, "", "/corridor");
+        }
+
+        const mouseStrength = isCorridor ? 0.3 : 0.8;
+        const invert = isCorridor ? -1 : 1;
+
+        camera.position.x = THREE.MathUtils.lerp(
+            camera.position.x,
+            mouseTarget.current.x * mouseStrength * invert,
+            0.05
+        );
+
+        camera.position.y +=
+            (mouseTarget.current.y * mouseStrength -
+                camera.position.y) *
+            0.05;
+
+        if (lightRef.current) {
+            // keep light fixed relative to camera
+            lightRef.current.position.set(
+                camera.position.x,
+                camera.position.y,
+                camera.position.z - 2
+            );
+        }
     });
 
     return null;
+    // return (
+    //     <group ref={lightRef}>
+    //         <pointLight intensity={3} distance={25} color="#ffffff" />
+    //         <mesh>
+    //             <sphereGeometry args={[0.2, 24, 24]} />
+    //             <meshBasicMaterial color="#ffff89" />
+    //         </mesh>
+    //     </group>
+    // );
 }
