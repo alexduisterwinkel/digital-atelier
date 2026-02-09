@@ -17,6 +17,7 @@ export function CameraController() {
     // --- entrance timing  ---
     const startTime = useRef(0);
     const entranceFinished = useRef(false);
+    
 
     // Listen to page scroll
     useEffect(() => {
