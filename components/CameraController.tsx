@@ -13,6 +13,8 @@ export function CameraController() {
     const { camera, mouse, viewport } = useThree();
     const targetZ = useRef(camera.position.z);
     const [scrollY, setScrollY] = useState(0);
+    const lastScrollY = useRef(0);
+    const velocity = useRef(0);
 
     const isCorridor = pathname === "/corridor";
     const mouseTarget = useRef({ x: 0, y: 0 });
@@ -92,15 +94,25 @@ export function CameraController() {
             camera.position.z - 5
         );
 
-        // scroll-driven forward movement
-        const scrollFactor = 0.01; // tweak speed
-        const scrollZ = 5 - scrollY * scrollFactor; // moves toward negative Z
-        camera.position.z = Math.min(scrollZ, targetZ.current); // don’t overshoot GSAP target
+        // --- MOMENTUM WALKING ---
 
-        // Room transition trigger: entrance → corridor
-        if (scrollZ <= rooms[1].position[2] + 5 && pathname === "/") {
-            window.history.replaceState(null, "", "/corridor");
-        }
+        const scrollDelta = scrollY - lastScrollY.current;
+        lastScrollY.current = scrollY;
+
+        // add impulse from scroll
+        velocity.current += scrollDelta * 0.0008;
+
+        // damping (friction)
+        velocity.current *= 0.92;
+
+        // apply movement
+        camera.position.z -= velocity.current;
+
+        // prevent overshooting target room
+        camera.position.z = Math.min(
+            camera.position.z,
+            targetZ.current
+        );
 
         const mouseStrength = isCorridor ? 0.3 : 0.8;
         const invert = isCorridor ? -1 : 1;
