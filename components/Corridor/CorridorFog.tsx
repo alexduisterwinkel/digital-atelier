@@ -10,45 +10,50 @@ export function CorridorFog({
     rooms: { position: [number, number, number]; color: string }[];
 }) {
     const mesh = useRef<THREE.Mesh>(null);
+    const fogOpacity = useRef(0.05);
     const { camera } = useThree();
 
+    const FOG_START_Z = -20; // z1 → fog starts appearing
+    const FOG_END_Z = -25;   // z2 → fog fully opaque
+    const PLANE_SPACING = 2;
+    const PLANE_COUNT = 8;
+
     useFrame(() => {
-        if (!mesh.current) return;
+        const t = THREE.MathUtils.clamp(
+            (FOG_START_Z - camera.position.z) /
+            (FOG_START_Z - FOG_END_Z),
+            0,
+            1
+        );
 
-        let influenceColor = new THREE.Color("#0b0b0f");
-        let totalInfluence = 0;
+        const targetOpacity = THREE.MathUtils.lerp(0.02, 0.15, t);
 
-        rooms.forEach((room) => {
-            const dz = Math.abs(camera.position.z - room.position[2]);
-
-            const influence = THREE.MathUtils.clamp(
-                1 - dz / 12,
-                0,
-                1
-            );
-
-            if (influence > 0) {
-                const c = new THREE.Color(room.color);
-                influenceColor.lerp(c, influence);
-                totalInfluence += influence;
-            }
-        });
-
-        const material =
-            mesh.current.material as THREE.MeshBasicMaterial;
-
-        material.color.lerp(influenceColor, 0.05);
+        fogOpacity.current = THREE.MathUtils.lerp(
+            fogOpacity.current,
+            targetOpacity,
+            0.05
+        );
     });
 
     return (
-        <mesh position={[0, 0, -25]}>
-            <sphereGeometry args={[8, 64, 64]} />
-            <meshBasicMaterial
-                color="#0b0b0f"
-                transparent
-                opacity={0.25}
-                depthWrite={false}
-            />
-        </mesh>
+        <>
+            {[...Array(8)].map((_, i) => (
+                // <mesh key={i} position={[0, 0, -5 - i * 2]}>
+                <mesh key={i} position={[0, 0,
+                    Math.min(
+                    FOG_START_Z - i * PLANE_SPACING,
+                    camera.position.z - i * PLANE_SPACING
+                ),]}>
+                    <planeGeometry args={[30, 30]} />
+                    <meshBasicMaterial
+                        transparent
+                        opacity={fogOpacity.current * (1 - i / PLANE_COUNT)}
+                        depthWrite={false}
+                        color={new THREE.Color(0.9, 0.3, 0.15)} // RGB normalized 0-1
+                        // color="#0b0b0f"
+                    />
+                </mesh>
+            ))}
+        </>
     );
 }

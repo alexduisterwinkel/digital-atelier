@@ -63,8 +63,9 @@ export function FogPlane({
             1
         );
 
-        const baseColor = new THREE.Color("#ffff89");
-        const litColor = new THREE.Color("#fff9f9"); // light tint
+        //FogPlane coloring
+        const baseColor = new THREE.Color("#498cb0");
+        const litColor = new THREE.Color("#74c4f0"); // light tint
 
         const colorMix = 1 - lightClear;
 
