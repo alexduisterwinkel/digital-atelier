@@ -32,7 +32,7 @@ export function CorridorCamera() {
             0.05
         );
 
-        camera.lookAt(camera.position.x * 0.2, 0, camera.position.z - 5);
+        // camera.lookAt(camera.position.x * 0.2, 0, camera.position.z - 5);
     });
 
     return null;

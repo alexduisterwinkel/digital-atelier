@@ -15,12 +15,28 @@ export function CameraController() {
     const [scrollY, setScrollY] = useState(0);
     const lastScrollY = useRef(0);
     const velocity = useRef(0);
+    const mode = useRef<"orbit" | "head">("orbit");
+    const entranceZ = useRef<number>(-6.5); // <- fixed entrance Z
 
     const isCorridor = pathname === "/corridor";
     const mouseTarget = useRef({ x: 0, y: 0 });
 
+    const focusedRoomX = useRef<number | null>(null);
+
     const lightRef = useRef<THREE.Group>(null);
 
+    // --- room focus handlers ---
+    useEffect(() => {
+        (window as any).enterRoom = (x: number) => {
+            focusedRoomX.current = x;
+        };
+
+        (window as any).exitRoom = () => {
+            focusedRoomX.current = null;
+        };
+    }, []);
+
+    // --- mouse tracking ---
     useEffect(() => {
         const handleMouseMove = (e: MouseEvent) => {
             mouseTarget.current.x =
@@ -35,16 +51,10 @@ export function CameraController() {
             window.removeEventListener("mousemove", handleMouseMove);
     }, []);
 
+    // --- initial camera position ---
     useEffect(() => {
-        if (!isCorridor) return;
-
-        gsap.to(camera.position, {
-            x: 0,
-            y: 0,
-            duration: 1.2,
-            ease: "power2.out",
-        });
-    }, [isCorridor]);
+        mode.current = "orbit";
+    }, [camera]);
 
     // Listen to page scroll
     useEffect(() => {
@@ -54,18 +64,13 @@ export function CameraController() {
     }, []);
 
     useEffect(() => {
+        if (isCorridor) return;
         const roomIndex = getRoomIndex(pathname);
         targetZ.current = rooms[roomIndex].position[2] + 5;
-
-        gsap.to(camera.position, {
-            z: targetZ.current,
-            duration: 1.5,
-            ease: "power2.inOut",
-        });
-    }, [pathname, camera]);
+    }, [pathname, isCorridor]);
 
     useEffect(() => {
-        if (!isCorridor) return;
+        if (isCorridor) return;
 
         gsap.to(camera.position, {
             x: 0,
@@ -75,12 +80,67 @@ export function CameraController() {
         });
     }, [isCorridor]);
 
-    useFrame((state) => {
-        // optional: subtle floating motion
-        camera.position.y = Math.sin(Date.now() * 0.001) * 0.1;
+    // --- rotation order for head movement ---
+    useEffect(() => {
+        camera.rotation.order = "YXZ";
+    }, [camera]);
 
-        // --- CURSOR STEERING (ADDED) ---
-        const targetX = mouse.x * viewport.width * 0.5;
+    useFrame((state) => {
+        console.log("camera position", camera.position.z);
+        // 1. --- MOMENTUM WALKING ---
+        if (focusedRoomX.current === null) {
+            const scrollDelta = scrollY - lastScrollY.current;
+            lastScrollY.current = scrollY;
+
+            // impulse from scroll
+            velocity.current += scrollDelta * 0.0008;
+
+            // damping
+            velocity.current *= 0.92;
+
+            // forward movement
+            camera.position.z -= velocity.current;
+
+            console.log("mode current: ", mode.current);
+            console.log("entranceZ position: ", entranceZ.current);
+
+            if (
+                mode.current === "orbit" &&
+                camera.position.z <= entranceZ.current
+            ) {
+                mode.current = "head";
+
+                // Capture current orientation from the world matrix
+                const currentQuat = camera.quaternion.clone(); // current rotation as quaternion
+                camera.rotation.setFromQuaternion(currentQuat); // convert to Euler to continue with rotation
+            }
+
+            if (
+                mode.current === "head" &&
+                camera.position.z >= entranceZ.current
+            ) {
+                mode.current = "orbit";
+
+                // Capture current orientation from the world matrix
+                const currentQuat = camera.quaternion.clone(); // current rotation as quaternion
+                camera.rotation.setFromQuaternion(currentQuat); // convert to Euler to continue with rotation
+            }
+
+            // prevent overshooting target room
+            camera.position.z = Math.min(
+                camera.position.z,
+                targetZ.current
+            );
+        }
+
+        // 2. TARGET X (room OR mouse)
+        let targetX = 0;
+
+        if (focusedRoomX.current !== null) {
+            targetX = focusedRoomX.current;
+        } else {
+            targetX = mouse.x * viewport.width * 0.5;
+        }
 
         camera.position.x = THREE.MathUtils.lerp(
             camera.position.x,
@@ -88,46 +148,40 @@ export function CameraController() {
             0.05
         );
 
-        camera.lookAt(
-            camera.position.x * 0.2,
-            0,
-            camera.position.z - 5
-        );
+        // 3. subtle floating motion
+        camera.position.y = Math.sin(Date.now() * 0.001) * 0.1;
 
-        // --- MOMENTUM WALKING ---
+        if (mode.current === "orbit") {
 
-        const scrollDelta = scrollY - lastScrollY.current;
-        lastScrollY.current = scrollY;
+            console.log("in orbit mode with rotation order:", camera.rotation.order);
+            camera.lookAt(
+                camera.position.x * 0.2,
+                0,
+                camera.position.z - 5
+            );
+        } else {
+            console.log("in head mode with rotation order: ", camera.rotation.order);
+            const MAX_YAW = Math.PI * 0.15;
+            const MAX_PITCH = Math.PI * 0.1;
 
-        // add impulse from scroll
-        velocity.current += scrollDelta * 0.0008;
+            const targetYaw = mouse.x * MAX_YAW;
+            const targetPitch = mouse.y * MAX_PITCH;
 
-        // damping (friction)
-        velocity.current *= 0.92;
+            camera.rotation.y = THREE.MathUtils.lerp(
+                camera.rotation.y,
+                targetYaw * -1,
+                0.2
+            );
 
-        // apply movement
-        camera.position.z -= velocity.current;
+            camera.rotation.x = THREE.MathUtils.lerp(
+                camera.rotation.x,
+                targetPitch,
+                0.2
+            );
+            camera.rotation.x = THREE.MathUtils.clamp(camera.rotation.x, -MAX_PITCH, MAX_PITCH);
+        }
 
-        // prevent overshooting target room
-        camera.position.z = Math.min(
-            camera.position.z,
-            targetZ.current
-        );
-
-        const mouseStrength = isCorridor ? 0.3 : 0.8;
-        const invert = isCorridor ? -1 : 1;
-
-        camera.position.x = THREE.MathUtils.lerp(
-            camera.position.x,
-            mouseTarget.current.x * mouseStrength * invert,
-            0.05
-        );
-
-        camera.position.y +=
-            (mouseTarget.current.y * mouseStrength -
-                camera.position.y) *
-            0.05;
-
+        // 5. light follows camera
         if (lightRef.current) {
             // keep light fixed relative to camera
             lightRef.current.position.set(
@@ -137,15 +191,5 @@ export function CameraController() {
             );
         }
     });
-
     return null;
-    // return (
-    //     <group ref={lightRef}>
-    //         <pointLight intensity={3} distance={25} color="#ffffff" />
-    //         <mesh>
-    //             <sphereGeometry args={[0.2, 24, 24]} />
-    //             <meshBasicMaterial color="#ffff89" />
-    //         </mesh>
-    //     </group>
-    // );
 }

@@ -52,7 +52,14 @@ export function RoomPreview({
         <group position={position}>
             <pointLight ref={light} intensity={0} distance={12} color={color} />
 
-            <mesh ref={mesh}>
+            <mesh ref={mesh}
+                onClick={(e) => {
+                e.stopPropagation();
+
+                if ((window as any).enterRoom) {
+                    (window as any).enterRoom(position[0]);
+                }
+            }}>
                 //size of the rooms
                 <boxGeometry args={[1.5, 2, 1]} />
                 <meshBasicMaterial
