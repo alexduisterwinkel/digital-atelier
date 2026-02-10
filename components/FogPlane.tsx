@@ -64,8 +64,8 @@ export function FogPlane({
         );
 
         //FogPlane coloring
-        const baseColor = new THREE.Color("#498cb0");
-        const litColor = new THREE.Color("#74c4f0"); // light tint
+        const baseColor = new THREE.Color("#1e3559");
+        const litColor = new THREE.Color("#5990e8"); // light tint
 
         const colorMix = 1 - lightClear;
 
@@ -88,7 +88,7 @@ export function FogPlane({
         <mesh ref={mesh}>
             <sphereGeometry args={[8, 64, 64]} />
             <meshBasicMaterial
-                color="1a2a44"
+                color="#ff0000"
                 transparent
                 opacity={0.8}
                 depthWrite={false}
