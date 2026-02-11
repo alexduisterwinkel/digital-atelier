@@ -2,7 +2,6 @@
 
 import { useRef } from "react";
 import * as THREE from "three";
-import { CorridorCamera } from "@/components/Corridor/CorridorCamera";
 import { RoomPreview } from "@/components/Corridor/RoomPreview";
 import { CorridorFog  } from "@/components/Corridor/CorridorFog";
 import { useThree } from "@react-three/fiber";
@@ -21,9 +20,8 @@ export function Corridor() {
     ];
 
     return (
+        <>
         <group ref={group}>
-            <CorridorCamera />
-            <>
                 <CorridorFog rooms={corridorRooms} />
 
                 {corridorRooms.map((room, i) => (
@@ -33,7 +31,19 @@ export function Corridor() {
                         color={room.color}
                     />
                 ))}
-            </>
+
         </group>
+        <mesh
+            position={[0, 0, -20]}
+            onClick={() => {
+                if ((window as any).exitRoom) {
+                    (window as any).exitRoom();
+                }
+            }}
+        >
+            <planeGeometry args={[100, 100]} />
+            <meshBasicMaterial transparent opacity={0} />
+        </mesh>
+        </>
     );
 }

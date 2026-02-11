@@ -15,23 +15,27 @@ export function CameraController() {
     const [scrollY, setScrollY] = useState(0);
     const lastScrollY = useRef(0);
     const velocity = useRef(0);
-    const mode = useRef<"orbit" | "head">("orbit");
+    const mode = useRef<"orbit" | "head" | "focus">("orbit");
     const entranceZ = useRef<number>(-6.5); // <- fixed entrance Z
 
     const isCorridor = pathname === "/corridor";
     const mouseTarget = useRef({ x: 0, y: 0 });
 
-    const focusedRoomX = useRef<number | null>(null);
+    const focusedRoomX = useRef<{
+        x: number;
+        z: number;
+    } | null>(null);
 
     const lightRef = useRef<THREE.Group>(null);
 
     // --- room focus handlers ---
     useEffect(() => {
-        (window as any).enterRoom = (x: number) => {
-            focusedRoomX.current = x;
+        (window as any).enterRoom = (x: number, z: number) => {
+            focusedRoomX.current = { x, z };
         };
 
         (window as any).exitRoom = () => {
+            console.log("inside exitroom")
             focusedRoomX.current = null;
         };
     }, []);
@@ -85,10 +89,12 @@ export function CameraController() {
         camera.rotation.order = "YXZ";
     }, [camera]);
 
-    useFrame((state) => {
-        console.log("camera position", camera.position.z);
+    useFrame(() => {
         // 1. --- MOMENTUM WALKING ---
         if (focusedRoomX.current === null) {
+            if(mode.current === "focus") {
+                mode.current = "head";
+            }
             const scrollDelta = scrollY - lastScrollY.current;
             lastScrollY.current = scrollY;
 
@@ -100,9 +106,6 @@ export function CameraController() {
 
             // forward movement
             camera.position.z -= velocity.current;
-
-            console.log("mode current: ", mode.current);
-            console.log("entranceZ position: ", entranceZ.current);
 
             if (
                 mode.current === "orbit" &&
@@ -131,36 +134,43 @@ export function CameraController() {
                 camera.position.z,
                 targetZ.current
             );
-        }
-
-        // 2. TARGET X (room OR mouse)
-        let targetX = 0;
-
-        if (focusedRoomX.current !== null) {
-            targetX = focusedRoomX.current;
         } else {
-            targetX = mouse.x * viewport.width * 0.5;
+            //inside the room and no camera-mouse looking
+            mode.current = "focus";
+            const room = focusedRoomX.current;
+
+            // center camera
+            camera.position.x = THREE.MathUtils.lerp(
+                camera.position.x,
+                0,
+                0.08
+            );
+
+            camera.position.y = THREE.MathUtils.lerp(
+                camera.position.y,
+                0,
+                0.08
+            );
+
+            // move forward into room
+            camera.position.z = THREE.MathUtils.lerp(
+                camera.position.z,
+                room.z + 2,
+                0.06
+            );
+
+            // rotate toward room
+            camera.lookAt(room.x, 0, room.z);
         }
-
-        camera.position.x = THREE.MathUtils.lerp(
-            camera.position.x,
-            targetX,
-            0.05
-        );
-
-        // 3. subtle floating motion
-        camera.position.y = Math.sin(Date.now() * 0.001) * 0.1;
 
         if (mode.current === "orbit") {
 
-            console.log("in orbit mode with rotation order:", camera.rotation.order);
             camera.lookAt(
                 camera.position.x * 0.2,
                 0,
                 camera.position.z - 5
             );
-        } else {
-            console.log("in head mode with rotation order: ", camera.rotation.order);
+        } else if(mode.current === "head") {
             const MAX_YAW = Math.PI * 0.15;
             const MAX_PITCH = Math.PI * 0.1;
 
