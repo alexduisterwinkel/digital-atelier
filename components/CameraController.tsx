@@ -90,7 +90,32 @@ export function CameraController() {
     }, [camera]);
 
     useFrame(() => {
+        if (mode.current === "orbit") {
+
+            const targetX = mouse.x * viewport.width * 0.5;
+            const targetY = mouse.y * 0.3;
+
+            camera.position.x = THREE.MathUtils.lerp(
+                camera.position.x,
+                targetX,
+                0.05
+            );
+
+            camera.position.y = THREE.MathUtils.lerp(
+                camera.position.y,
+                targetY,
+                0.05
+            );
+
+            camera.lookAt(
+                camera.position.x * 0.2,
+                0,
+                camera.position.z - 5
+            );
+        }
+
         // 1. --- MOMENTUM WALKING ---
+        console.log("camera mode: ", mode.current);
         if (focusedRoomX.current === null) {
             if(mode.current === "focus") {
                 mode.current = "head";
@@ -165,12 +190,14 @@ export function CameraController() {
 
         if (mode.current === "orbit") {
 
+            console.log("camera mode orbit: ", mode.current);
             camera.lookAt(
                 camera.position.x * 0.2,
                 0,
                 camera.position.z - 5
             );
         } else if(mode.current === "head") {
+            console.log("camera mode head: ", mode.current);
             const MAX_YAW = Math.PI * 0.15;
             const MAX_PITCH = Math.PI * 0.1;
 
