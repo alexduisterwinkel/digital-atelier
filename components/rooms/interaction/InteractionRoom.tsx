@@ -1,0 +1,345 @@
+import React, { useRef, useMemo, useState } from "react";
+import { useFrame, useThree } from "@react-three/fiber";
+import { Environment, Float, Text } from "@react-three/drei";
+import * as THREE from "three";
+
+/**
+ * INTERACTION LAB
+ *
+ * The room itself is now the clickable object in the corridor.
+ * It manages entering, being inside, and exiting.
+ */
+
+export function InteractionRoom({
+                                            position = [0, 0, 0] as [number, number, number],
+                                        }) {
+    const [entered, setEntered] = useState(false);
+
+    return (
+        <group position={position}>
+            <color attach="background" args={["#050505"]} />
+
+            <ambientLight intensity={0.4} />
+            <directionalLight position={[5, 5, 5]} intensity={1.2} />
+
+            {/* Click target used while in corridor */}
+            {!entered && (
+                <RoomEntranceCollider
+                    onEnter={() => setEntered(true)}
+                />
+            )}
+
+            {/* Entrance wall + door */}
+            {!entered && <EntranceWall />}
+
+            {/*<Floor />*/}
+            <BackWall />
+
+            <InteractiveSphere position={[-2, 1.2, 0]} />
+            <InteractiveCube position={[0, 1.2, 0]} />
+            <InteractivePlane position={[2, 1.2, 0]} />
+            <Title />
+
+            {/* Exit collider only exists while inside */}
+            {entered && (
+                <ExitCollider onExit={() => setEntered(false)} />
+            )}
+
+            <Environment preset="city" />
+        </group>
+    );
+}
+
+/**
+ * INVISIBLE CLICK COLLIDER
+ *
+ * Clicking this moves the camera in front of the room
+ * via CameraController.
+ */
+function RoomEntranceCollider({
+                                  onEnter,
+                              }: {
+    onEnter: () => void;
+}) {
+    return (
+        <mesh
+            position={[0, 1.2, 3]}
+            onClick={(e) => {
+                e.stopPropagation();
+
+                if ((window as any).enterRoom) {
+                    const worldPosition = new THREE.Vector3();
+                    e.object.getWorldPosition(worldPosition);
+
+                    (window as any).enterRoom(
+                        worldPosition.x,
+                        worldPosition.z
+                    );
+                }
+
+                onEnter();
+            }}
+        >
+            <boxGeometry args={[2.5, 2.5, 2]} />
+            <meshBasicMaterial transparent opacity={0} />
+        </mesh>
+    );
+}
+
+/**
+ * EXIT COLLIDER
+ *
+ * Invisible plane used to leave the room and return
+ * to corridor navigation.
+ */
+function ExitCollider({ onExit }: { onExit: () => void }) {
+    return (
+        <mesh
+            position={[0, 1.2, 4]}
+            onClick={(e) => {
+                e.stopPropagation();
+
+                if ((window as any).exitRoom) {
+                    (window as any).exitRoom();
+                }
+
+                onExit();
+            }}
+        >
+            <planeGeometry args={[10, 6]} />
+            <meshBasicMaterial transparent opacity={0} />
+        </mesh>
+    );
+}
+
+/**
+ * WALL WITH OPENING DOOR
+ */
+function EntranceWall() {
+    const doorRef = useRef<THREE.Group | null>(null);
+    const [opening, setOpening] = useState(false);
+    const [visible, setVisible] = useState(true);
+
+    const WALL_WIDTH = 8;
+    const WALL_HEIGHT = 4;
+    const WALL_DEPTH = 0.2;
+
+    const DOOR_WIDTH = 1.5;
+    const DOOR_HEIGHT = 3.5;
+
+    const SIDE_WIDTH = (WALL_WIDTH - DOOR_WIDTH) / 2;
+    const TOP_HEIGHT = WALL_HEIGHT - DOOR_HEIGHT;
+
+
+    const openAngle = THREE.MathUtils.degToRad(70);
+    useFrame(() => {
+        if (!doorRef.current || !opening) return;
+
+
+        doorRef.current.rotation.y = THREE.MathUtils.lerp(
+            doorRef.current.rotation.y,
+            openAngle,
+            0.08
+        );
+
+        if (Math.abs(doorRef.current.rotation.y - openAngle) < 0.01) {
+            setTimeout(() => setVisible(false), 200);
+        }
+
+    });
+    if (!visible) return null;
+
+    return (
+        <group position={[0, 0, 2]}>
+            {/* LEFT WALL */}
+            <mesh position={[-DOOR_WIDTH / 2 - SIDE_WIDTH / 2, WALL_HEIGHT / 2, 0]}>
+                <boxGeometry args={[SIDE_WIDTH, WALL_HEIGHT, WALL_DEPTH]} />
+                <meshStandardMaterial color="#111111" />
+            </mesh>
+
+            {/* RIGHT WALL */}
+            <mesh position={[DOOR_WIDTH / 2 + SIDE_WIDTH / 2, WALL_HEIGHT / 2, 0]}>
+                <boxGeometry args={[SIDE_WIDTH, WALL_HEIGHT, WALL_DEPTH]} />
+                <meshStandardMaterial color="#111111" />
+            </mesh>
+
+            {/* TOP WALL */}
+            <mesh position={[0, DOOR_HEIGHT + TOP_HEIGHT / 2, 0]}>
+                <boxGeometry args={[DOOR_WIDTH, TOP_HEIGHT, WALL_DEPTH]} />
+                <meshStandardMaterial color="#111111" />
+            </mesh>
+
+            {/* DOOR (hinged left) */}
+            <group ref={doorRef} position={[-DOOR_WIDTH / 2, 0, 0]}>
+                <mesh
+                    position={[DOOR_WIDTH / 2 - 0.5, DOOR_HEIGHT / 2, 0.11 -0.5]}
+                    rotation={[0,openAngle, 0]}
+                    onClick={() => setOpening(true)}
+                >
+                    <boxGeometry args={[DOOR_WIDTH, DOOR_HEIGHT, 0.08]} />
+                    <meshStandardMaterial
+                        color="#666666"
+                        metalness={0.2}
+                        roughness={0.6}
+                    />
+                </mesh>
+            </group>
+        </group>
+    );
+}
+
+function Floor() {
+    return (
+        <mesh
+            rotation={[-Math.PI / 2, 0, 0]}
+            position={[0, 0, 0]}
+            receiveShadow
+        >
+            <planeGeometry args={[20, 20]} />
+            <meshStandardMaterial
+                color="#0f0f0f"
+                roughness={0.9}
+                metalness={0.1}
+            />
+        </mesh>
+    );
+}
+
+function BackWall() {
+    return (
+        <mesh position={[0, 2, -3]}>
+            <planeGeometry args={[12, 6]} />
+            <meshStandardMaterial color="#0a0a0a" />
+        </mesh>
+    );
+}
+
+function Title() {
+    return (
+        <Text
+            position={[0, 3.2, -2.8]}
+            fontSize={0.35}
+            color="#ffffff"
+            anchorX="center"
+        >
+            Interaction Lab
+        </Text>
+    );
+}
+
+function InteractiveSphere({ position }) {
+    const ref = useRef<THREE.Mesh | null>(null);
+    const { mouse, viewport } = useThree();
+
+    useFrame((_, delta) => {
+        if (!ref.current) return;
+
+        const targetX = (mouse.x * viewport.width) / 4;
+        const targetY = (mouse.y * viewport.height) / 6 + 1.2;
+
+        ref.current.position.x = THREE.MathUtils.lerp(
+            ref.current.position.x,
+            position[0] + targetX,
+            0.08
+        );
+
+        ref.current.position.y = THREE.MathUtils.lerp(
+            ref.current.position.y,
+            targetY,
+            0.08
+        );
+
+        ref.current.rotation.y += delta * 0.6;
+    });
+
+    return (
+        <Float speed={2} rotationIntensity={0.3} floatIntensity={0.6}>
+            <mesh ref={ref} position={position}>
+                <sphereGeometry args={[0.6, 64, 64]} />
+                <meshStandardMaterial
+                    color="#66ccff"
+                    metalness={0.6}
+                    roughness={0.2}
+                />
+            </mesh>
+        </Float>
+    );
+}
+
+function InteractiveCube({ position }) {
+    const ref = useRef<THREE.Mesh | null>(null);
+    const [hovered, setHovered] = useState(false);
+
+    useFrame((_, delta) => {
+        if (!ref.current) return;
+
+        const targetScale = hovered ? 1.4 : 1;
+        ref.current.scale.lerp(
+            new THREE.Vector3(targetScale, targetScale, targetScale),
+            0.1
+        );
+
+        ref.current.rotation.x += delta * 0.4;
+        ref.current.rotation.y += delta * 0.5;
+    });
+
+    return (
+        <mesh
+            ref={ref}
+            position={position}
+            onPointerOver={() => setHovered(true)}
+            onPointerOut={() => setHovered(false)}
+        >
+            <boxGeometry args={[1, 1, 1]} />
+            <meshStandardMaterial
+                color={hovered ? "#ff8844" : "#ffffff"}
+                metalness={0.3}
+                roughness={0.5}
+            />
+        </mesh>
+    );
+}
+
+function InteractivePlane({ position }) {
+    const ref = useRef<THREE.Mesh | null>(null);
+    const { mouse } = useThree();
+
+    const geometry = useMemo(() => {
+        const geo = new THREE.PlaneGeometry(2, 2, 40, 40);
+        geo.rotateY(-Math.PI / 6);
+        return geo;
+    }, []);
+
+    useFrame(() => {
+        if (!ref.current) return;
+
+        const geometry = ref.current.geometry as THREE.BufferGeometry;
+        const positions = geometry.attributes.position as THREE.BufferAttribute;
+
+        for (let i = 0; i < positions.count; i++) {
+            const x = positions.getX(i);
+            const y = positions.getY(i);
+
+            const dist = Math.sqrt(
+                Math.pow(mouse.x * 2 - x * 0.3, 2) +
+                Math.pow(mouse.y * 2 - y * 0.3, 2)
+            );
+
+            const z = Math.sin(dist * 4) * 0.15;
+            positions.setZ(i, z);
+        }
+
+        positions.needsUpdate = true;
+    });
+
+    return (
+        <mesh ref={ref} geometry={geometry} position={position}>
+            <meshStandardMaterial
+                color="#88ffaa"
+                wireframe
+                metalness={0.2}
+                roughness={0.8}
+            />
+        </mesh>
+    );
+}

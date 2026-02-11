@@ -16,7 +16,7 @@ export function Corridor() {
         /* RIGHT ROOM */
         { position: [4, 0, -12] as [number, number, number], color: "#00ffff" },
         /* CENTER FAR ROOM */
-        { position: [0, 0, -14] as [number, number, number], color: "#ffff00" },
+        // { position: [0, 0, -14] as [number, number, number], color: "#ffff00" },
     ];
 
     return (
