@@ -2,6 +2,7 @@ import React, { useRef, useMemo, useState } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { Environment, Float, Text } from "@react-three/drei";
 import * as THREE from "three";
+import { EntranceWall } from "@/components/Corridor/EntranceWall";
 
 /**
  * INTERACTION LAB
@@ -30,7 +31,7 @@ export function InteractionRoom({
             )}
 
             {/* Entrance wall + door */}
-            {!entered && <EntranceWall />}
+            {!entered && <EntranceWall color={"#914b4a"}/>}
 
             {/*<Floor />*/}
             <BackWall />
@@ -108,99 +109,6 @@ function ExitCollider({ onExit }: { onExit: () => void }) {
         >
             <planeGeometry args={[10, 6]} />
             <meshBasicMaterial transparent opacity={0} />
-        </mesh>
-    );
-}
-
-/**
- * WALL WITH OPENING DOOR
- */
-function EntranceWall() {
-    const doorRef = useRef<THREE.Group | null>(null);
-    const [opening, setOpening] = useState(false);
-    const [visible, setVisible] = useState(true);
-
-    const WALL_WIDTH = 8;
-    const WALL_HEIGHT = 4;
-    const WALL_DEPTH = 0.2;
-
-    const DOOR_WIDTH = 1.5;
-    const DOOR_HEIGHT = 3.5;
-
-    const SIDE_WIDTH = (WALL_WIDTH - DOOR_WIDTH) / 2;
-    const TOP_HEIGHT = WALL_HEIGHT - DOOR_HEIGHT;
-
-
-    const openAngle = THREE.MathUtils.degToRad(70);
-    useFrame(() => {
-        if (!doorRef.current || !opening) return;
-
-
-        doorRef.current.rotation.y = THREE.MathUtils.lerp(
-            doorRef.current.rotation.y,
-            openAngle,
-            0.08
-        );
-
-        if (Math.abs(doorRef.current.rotation.y - openAngle) < 0.01) {
-            setTimeout(() => setVisible(false), 200);
-        }
-
-    });
-    if (!visible) return null;
-
-    return (
-        <group position={[0, 0, 2]}>
-            {/* LEFT WALL */}
-            <mesh position={[-DOOR_WIDTH / 2 - SIDE_WIDTH / 2, WALL_HEIGHT / 2, 0]}>
-                <boxGeometry args={[SIDE_WIDTH, WALL_HEIGHT, WALL_DEPTH]} />
-                <meshStandardMaterial color="#111111" />
-            </mesh>
-
-            {/* RIGHT WALL */}
-            <mesh position={[DOOR_WIDTH / 2 + SIDE_WIDTH / 2, WALL_HEIGHT / 2, 0]}>
-                <boxGeometry args={[SIDE_WIDTH, WALL_HEIGHT, WALL_DEPTH]} />
-                <meshStandardMaterial color="#111111" />
-            </mesh>
-
-            {/* TOP WALL */}
-            <mesh position={[0, DOOR_HEIGHT + TOP_HEIGHT / 2, 0]}>
-                <boxGeometry args={[DOOR_WIDTH, TOP_HEIGHT, WALL_DEPTH]} />
-                <meshStandardMaterial color="#111111" />
-            </mesh>
-
-            {/* DOOR (hinged left) */}
-            <group ref={doorRef} position={[-DOOR_WIDTH / 2, 0, 0]}>
-                <mesh
-                    position={[DOOR_WIDTH / 2 - 0.5, DOOR_HEIGHT / 2, 0.11 -0.5]}
-                    rotation={[0,openAngle, 0]}
-                    onClick={() => setOpening(true)}
-                >
-                    <boxGeometry args={[DOOR_WIDTH, DOOR_HEIGHT, 0.08]} />
-                    <meshStandardMaterial
-                        color="#666666"
-                        metalness={0.2}
-                        roughness={0.6}
-                    />
-                </mesh>
-            </group>
-        </group>
-    );
-}
-
-function Floor() {
-    return (
-        <mesh
-            rotation={[-Math.PI / 2, 0, 0]}
-            position={[0, 0, 0]}
-            receiveShadow
-        >
-            <planeGeometry args={[20, 20]} />
-            <meshStandardMaterial
-                color="#0f0f0f"
-                roughness={0.9}
-                metalness={0.1}
-            />
         </mesh>
     );
 }

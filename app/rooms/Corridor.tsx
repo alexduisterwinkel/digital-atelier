@@ -16,25 +16,25 @@ export function Corridor() {
         /* RIGHT ROOM */
         { position: [4, 0, -12] as [number, number, number], color: "#00ffff" },
         /* CENTER FAR ROOM */
-        // { position: [0, 0, -14] as [number, number, number], color: "#ffff00" },
+        { position: [0, 0, -14] as [number, number, number], color: "#ffff00" },
     ];
 
     return (
         <>
-        <group ref={group}>
-                <CorridorFog rooms={corridorRooms} />
+        {/*<group ref={group}>*/}
+        {/*        <CorridorFog rooms={corridorRooms} />*/}
 
-                {corridorRooms.map((room, i) => (
-                    <RoomPreview
-                        key={i}
-                        position={room.position}
-                        color={room.color}
-                    />
-                ))}
+        {/*        {corridorRooms.map((room, i) => (*/}
+        {/*            <RoomPreview*/}
+        {/*                key={i}*/}
+        {/*                position={room.position}*/}
+        {/*                color={room.color}*/}
+        {/*            />*/}
+        {/*        ))}*/}
 
-        </group>
+        {/*</group>*/}
         <mesh
-            position={[0, 0, -20]}
+            position={[0, 0, -5]}
             onClick={() => {
                 if ((window as any).exitRoom) {
                     (window as any).exitRoom();
