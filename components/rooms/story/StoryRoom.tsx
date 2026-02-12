@@ -3,6 +3,7 @@ import { useFrame } from "@react-three/fiber";
 import { Environment, Text, Float } from "@react-three/drei";
 import * as THREE from "three";
 import { EntranceWall } from "@/components/Corridor/EntranceWall";
+import { ExitCollider, RoomEntranceCollider } from "@/components/Corridor/Collider";
 
 /**
  * STORY ROOM
@@ -25,7 +26,7 @@ export function StoryRoom({
             <directionalLight position={[3, 5, 4]} intensity={1.1} />
 
             {!entered && (
-                <EntranceCollider onEnter={() => setEntered(true)} />
+                <RoomEntranceCollider onEnter={() => setEntered(true)} />
             )}
 
             {!entered && <EntranceWall color={"#549e52"}/>}
@@ -63,77 +64,6 @@ export function StoryRoom({
 
             <Environment preset="studio" />
         </group>
-    );
-}
-
-/**
- * INVISIBLE CLICK COLLIDER
- *
- * Clicking this moves the camera in front of the room
- * via CameraController.
- */
-function EntranceCollider({
-                                  onEnter,
-                              }: {
-    onEnter: () => void;
-}) {
-    return (
-        <mesh
-            position={[0, 1.2, 3]}
-            onClick={(e) => {
-                e.stopPropagation();
-
-                if ((window as any).enterRoom) {
-                    const worldPosition = new THREE.Vector3();
-                    e.object.getWorldPosition(worldPosition);
-
-                    (window as any).enterRoom(
-                        worldPosition.x,
-                        worldPosition.z
-                    );
-                }
-
-                onEnter();
-            }}
-        >
-            <boxGeometry args={[2.5, 2.5, 2]} />
-            <meshBasicMaterial transparent opacity={0} />
-        </mesh>
-    );
-}
-
-/**
- * EXIT COLLIDER
- *
- * Invisible plane used to leave the room and return
- * to corridor navigation.
- */
-function ExitCollider({ onExit }: { onExit: () => void }) {
-    return (
-        <mesh
-            position={[0, 1.2, 4]}
-            onClick={(e) => {
-                e.stopPropagation();
-
-                if ((window as any).exitRoom) {
-                    (window as any).exitRoom();
-                }
-
-                onExit();
-            }}
-        >
-            <planeGeometry args={[10, 6]} />
-            <meshBasicMaterial transparent opacity={0} />
-        </mesh>
-    );
-}
-
-function Floor() {
-    return (
-        <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-            <planeGeometry args={[20, 20]} />
-            <meshStandardMaterial color="#0c080d" roughness={0.95} />
-        </mesh>
     );
 }
 
