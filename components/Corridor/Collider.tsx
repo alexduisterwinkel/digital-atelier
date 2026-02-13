@@ -17,25 +17,15 @@ export function RoomEntranceCollider({
 }) {
     return (
         <mesh
-            position={[0, 1.2, 3]}
+            position={[-1, 2, 3.1]}
             onClick={(e) => {
+                console.log("collider clicked");
                 e.stopPropagation();
-
-                if ((window as any).enterRoom) {
-                    const worldPosition = new THREE.Vector3();
-                    e.object.getWorldPosition(worldPosition);
-
-                    (window as any).enterRoom(
-                        worldPosition.x,
-                        worldPosition.z
-                    );
-                }
-
                 onEnter();
             }}
         >
-            <boxGeometry args={[2.5, 2.5, 2]} />
-            <meshBasicMaterial transparent opacity={0} />
+            <boxGeometry args={[12 , 6, 0]} />
+            <meshBasicMaterial opacity={0} color={"red"}/>
         </mesh>
     );
 }

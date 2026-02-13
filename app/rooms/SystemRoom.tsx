@@ -17,16 +17,37 @@ export function SystemRoom({
                                position = [0, 0, 0] as [number, number, number],
                                     }) {
     const [entered, setEntered] = useState(false);
+    const roomRef = useRef<THREE.Group>(null);
+
+    const focusTarget = useRef<THREE.Mesh>(null);
+    const handleEnter = () => {
+        if (!focusTarget.current || !roomRef.current) return;
+
+        // get WORLD position of focus anchor
+        const worldPos = new THREE.Vector3();
+        focusTarget.current.getWorldPosition(worldPos);
+
+        const roomQuat = new THREE.Quaternion();
+        roomRef.current.getWorldQuaternion(roomQuat);
+
+        (window as any).enterRoom(worldPos.x, worldPos.z, roomQuat);
+        setEntered(true);
+    };
+
+    const handleExit = () => {
+        (window as any).exitRoom();
+        setEntered(false);
+    };
 
     return (
-        <group position={position} rotation={rotation}>
+        <group ref={roomRef} position={position} rotation={rotation}>
             <color attach="background" args={["#04060a"]} />
 
             <ambientLight intensity={0.3} />
             <directionalLight position={[4, 6, 4]} intensity={1.4} />
 
             {!entered && (
-                <RoomEntranceCollider onEnter={() => setEntered(true)} />
+                <RoomEntranceCollider onEnter={handleEnter} />
             )}
 
             {!entered && <EntranceWall color={"#5050ad"}/>}
@@ -42,10 +63,11 @@ export function SystemRoom({
             <ConnectionBeams />
 
             {entered && (
-                <ExitCollider onExit={() => setEntered(false)} />
+                <ExitCollider onExit={handleExit} />
             )}
 
             <Environment preset="warehouse" />
+            <mesh ref={focusTarget} position={[0, 0, 2]} />
         </group>
     );
 }

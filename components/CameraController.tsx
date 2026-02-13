@@ -1,91 +1,141 @@
 "use client";
 
-import { usePathname } from "next/navigation";
 import { useThree, useFrame } from "@react-three/fiber";
-import { useEffect, useState, useRef } from "react";
-import { rooms } from "@/lib/roomsConfig";
-import { getRoomIndex } from "@/lib/routeMapper";
+import { useEffect, useRef } from "react";
 import * as THREE from "three";
 
+type Mode = "orbit" | "head" | "focus";
+
 export function CameraController() {
-    const pathname = usePathname();
     const { camera, mouse, viewport } = useThree();
-    const targetZ = useRef(camera.position.z);
-    const [scrollY, setScrollY] = useState(0);
+
+    const mode = useRef<Mode>("orbit");
+
+    const scrollY = useRef(0);
     const lastScrollY = useRef(0);
     const velocity = useRef(0);
-    const mode = useRef<"orbit" | "head" | "focus">("orbit");
-    const entranceZ = useRef<number>(-6.5); // <- fixed entrance Z
 
-    const isCorridor = pathname === "/corridor";
-    const mouseTarget = useRef({ x: 0, y: 0 });
+    const entranceZ = -6.5;
 
-    const focusedRoomX = useRef<{
-        x: number;
-        z: number;
+    // focus state
+    const focusPosition = useRef<THREE.Vector3 | null>(null);
+    const storedPose = useRef<{
+        position: THREE.Vector3;
+        quaternion: THREE.Quaternion;
     } | null>(null);
 
-    const lightRef = useRef<THREE.Group>(null);
+    const tmpVec = new THREE.Vector3();
+    const tmpQuat = new THREE.Quaternion();
 
-    // --- room focus handlers ---
+    const focusRotation = useRef<THREE.Quaternion | null>(null);
+
+    /* ---------------------------------- */
+    /* scroll listener */
+    /* ---------------------------------- */
     useEffect(() => {
-        (window as any).enterRoom = (x: number, z: number) => {
-            focusedRoomX.current = { x, z };
+        const onScroll = () => {
+            scrollY.current = window.scrollY;
+        };
+        window.addEventListener("scroll", onScroll);
+        return () => window.removeEventListener("scroll", onScroll);
+    }, []);
+
+    /* ---------------------------------- */
+    /* global room controls */
+    /* ---------------------------------- */
+    useEffect(() => {
+        (window as any).enterRoom = (x, z, roomQuat) => {
+            storedPose.current = {
+                position: camera.position.clone(),
+                quaternion: camera.quaternion.clone(),
+            };
+
+            // camera stands in front of room
+            const forward = new THREE.Vector3(0, 0, -1)
+                .applyQuaternion(roomQuat);
+
+            focusPosition.current = new THREE.Vector3(
+                x,
+                0,
+                z
+            ).addScaledVector(forward, -5);
+
+            // camera faces room head-on
+            focusRotation.current = roomQuat.clone();
+
+            mode.current = "focus";
         };
 
         (window as any).exitRoom = () => {
-            focusedRoomX.current = null;
+            if (!storedPose.current) return;
+            mode.current = "head";
         };
-    }, []);
-
-    // --- mouse tracking ---
-    useEffect(() => {
-        const handleMouseMove = (e: MouseEvent) => {
-            mouseTarget.current.x =
-                (e.clientX / window.innerWidth - 0.5) * 2;
-
-            mouseTarget.current.y =
-                (e.clientY / window.innerHeight - 0.5) * 2;
-        };
-
-        window.addEventListener("mousemove", handleMouseMove);
-        return () =>
-            window.removeEventListener("mousemove", handleMouseMove);
-    }, []);
-
-    // --- initial camera position ---
-    useEffect(() => {
-        mode.current = "orbit";
     }, [camera]);
 
-    // Listen to page scroll
-    useEffect(() => {
-        const handleScroll = () => setScrollY(window.scrollY);
-        window.addEventListener("scroll", handleScroll);
-        return () => window.removeEventListener("scroll", handleScroll);
-    }, []);
-
-    useEffect(() => {
-        if (isCorridor) return;
-        const roomIndex = getRoomIndex(pathname);
-        targetZ.current = rooms[roomIndex].position[2] + 5;
-    }, [pathname, isCorridor]);
-
-    // --- rotation order for head movement ---
-    useEffect(() => {
-        camera.rotation.order = "YXZ";
-    }, [camera]);
-
+    /* ---------------------------------- */
+    /* main loop */
+    /* ---------------------------------- */
     useFrame(() => {
-        console.log("camera x position: ", camera.position.x)
-        console.log("camera y position: ", camera.position.y)
-        console.log("camera z position: ", camera.position.z)
+        /* ============================= */
+        /* FOCUS MODE */
+        /* ============================= */
+        if (mode.current === "focus" && focusPosition.current) {
+            // move toward focus position
+            camera.position.lerp(focusPosition.current, 0.08);
 
-        console.log("camera x rotation: ", camera.rotation.x)
-        console.log("camera y rotation: ", camera.rotation.y)
-        console.log("camera z rotation: ", camera.rotation.z)
+            // rotate toward focus target
+            camera.quaternion.slerp(focusRotation.current, 0.08);
+
+            // freeze when close enough
+            if (
+                camera.position.distanceTo(focusPosition.current) < 0.01
+            ) {
+                camera.position.copy(focusPosition.current);
+                camera.quaternion.copy(focusRotation.current);
+            }
+
+            return;
+        }
+
+        /* ============================= */
+        /* RETURN FROM FOCUS */
+        /* ============================= */
+        if (mode.current === "head" && storedPose.current) {
+            camera.position.lerp(storedPose.current.position, 0.08);
+            camera.quaternion.slerp(storedPose.current.quaternion, 0.08);
+
+            if (
+                camera.position.distanceTo(storedPose.current.position) < 0.02
+            ) {
+                camera.position.copy(storedPose.current.position);
+                camera.quaternion.copy(storedPose.current.quaternion);
+                storedPose.current = null;
+            }
+        }
+
+        /* ============================= */
+        /* SCROLL MOMENTUM (unchanged) */
+        /* ============================= */
+        const scrollDelta = scrollY.current - lastScrollY.current;
+        lastScrollY.current = scrollY.current;
+
+        velocity.current += scrollDelta * 0.0008;
+        velocity.current *= 0.92;
+        camera.position.z -= velocity.current;
+
+        /* ============================= */
+        /* MODE SWITCH */
+        /* ============================= */
+        if (camera.position.z <= entranceZ) {
+            if (mode.current === "orbit") mode.current = "head";
+        } else {
+            if (mode.current === "head") mode.current = "orbit";
+        }
+
+        /* ============================= */
+        /* ORBIT MODE */
+        /* ============================= */
         if (mode.current === "orbit") {
-
             const targetX = mouse.x * viewport.width * 0.5;
             const targetY = mouse.y * 0.3;
 
@@ -101,130 +151,32 @@ export function CameraController() {
                 0.05
             );
 
-            camera.lookAt(
+            tmpVec.set(
                 camera.position.x * 0.2,
                 0,
                 camera.position.z - 5
             );
+
+            camera.lookAt(tmpVec);
         }
 
-        // 1. --- MOMENTUM WALKING ---
-        if (focusedRoomX.current === null) {
-            if(mode.current === "focus") {
-                mode.current = "head";
-            }
-            const scrollDelta = scrollY - lastScrollY.current;
-            lastScrollY.current = scrollY;
-
-            // impulse from scroll
-            velocity.current += scrollDelta * 0.0008;
-
-            // damping
-            velocity.current *= 0.92;
-
-            // forward movement
-            camera.position.z -= velocity.current;
-
-            if (
-                mode.current === "orbit" &&
-                camera.position.z <= entranceZ.current
-            ) {
-                mode.current = "head";
-
-                // Capture current orientation from the world matrix
-                const currentQuat = camera.quaternion.clone(); // current rotation as quaternion
-                camera.rotation.setFromQuaternion(currentQuat); // convert to Euler to continue with rotation
-            }
-
-            if (
-                mode.current === "head" &&
-                camera.position.z >= entranceZ.current
-            ) {
-                mode.current = "orbit";
-
-                // Capture current orientation from the world matrix
-                const currentQuat = camera.quaternion.clone(); // current rotation as quaternion
-                camera.rotation.setFromQuaternion(currentQuat); // convert to Euler to continue with rotation
-            }
-
-            // prevent overshooting target room
-            camera.position.z = Math.min(
-                camera.position.z,
-                targetZ.current
-            );
-        } else {
-            //inside the room and no camera-mouse looking
-            mode.current = "focus";
-            const room = focusedRoomX.current;
-
-            // center camera
-            camera.position.x = THREE.MathUtils.lerp(
-                camera.position.x,
-                0,
-                0.08
-            );
-
-            camera.position.y = THREE.MathUtils.lerp(
-                camera.position.y,
-                0,
-                0.08
-            );
-
-            // move forward into room
-            camera.position.z = THREE.MathUtils.lerp(
-                camera.position.z,
-                room.z,
-                0.06
-            );
-
-            // rotate toward room
-            const target = new THREE.Vector3(room.x, 0, room.z);
-
-            const m = new THREE.Matrix4();
-            m.lookAt(camera.position, target, camera.up);
-
-            const targetQuat = new THREE.Quaternion();
-            targetQuat.setFromRotationMatrix(m);
-
-            camera.quaternion.slerp(targetQuat, 0.08);
-        }
-
-        if (mode.current === "orbit") {
-            camera.lookAt(
-                camera.position.x * 0.2,
-                0,
-                camera.position.z - 5
-            );
-        } else if(mode.current === "head") {
+        /* ============================= */
+        /* HEAD MODE */
+        /* ============================= */
+        if (mode.current === "head" && !storedPose.current) {
             const MAX_YAW = Math.PI * 0.15;
             const MAX_PITCH = Math.PI * 0.1;
 
-            const targetYaw = mouse.x * MAX_YAW;
-            const targetPitch = mouse.y * MAX_PITCH;
+            const yaw = mouse.x * MAX_YAW;
+            const pitch = mouse.y * MAX_PITCH;
 
-            camera.rotation.y = THREE.MathUtils.lerp(
-                camera.rotation.y,
-                targetYaw * -1,
-                0.2
+            tmpQuat.setFromEuler(
+                new THREE.Euler(pitch, -yaw, 0, "YXZ")
             );
 
-            camera.rotation.x = THREE.MathUtils.lerp(
-                camera.rotation.x,
-                targetPitch,
-                0.2
-            );
-            camera.rotation.x = THREE.MathUtils.clamp(camera.rotation.x, -MAX_PITCH, MAX_PITCH);
-        }
-
-        // 5. light follows camera
-        if (lightRef.current) {
-            // keep light fixed relative to camera
-            lightRef.current.position.set(
-                camera.position.x,
-                camera.position.y,
-                camera.position.z - 2
-            );
+            camera.quaternion.slerp(tmpQuat, 0.2);
         }
     });
+
     return null;
 }

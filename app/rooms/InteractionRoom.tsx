@@ -16,16 +16,20 @@ export function InteractionRoom({
                                             position = [0, 0, 0] as [number, number, number],
                                         }) {
     const [entered, setEntered] = useState(false);
-    const focusTarget = useRef<THREE.Mesh>(null);
+    const roomRef = useRef<THREE.Group>(null);
+    const focusTarget = useRef<THREE.Object3D>(null);
 
     const handleEnter = () => {
-        if (!focusTarget.current) return;
-
+        if (!focusTarget.current || !roomRef.current) return;
         // get WORLD position of focus anchor
+
         const worldPos = new THREE.Vector3();
         focusTarget.current.getWorldPosition(worldPos);
+        const roomQuat = new THREE.Quaternion();
 
-        (window as any).enterRoom(worldPos.x, worldPos.z);
+        roomRef.current.getWorldQuaternion(roomQuat);
+        (window as any).enterRoom(worldPos.x, worldPos.z, roomQuat);
+
         setEntered(true);
     };
 
@@ -35,7 +39,7 @@ export function InteractionRoom({
     };
 
     return (
-        <group position={position}>
+        <group ref={roomRef} position={position}>
             <color attach="background" args={["#050505"]} />
 
             <ambientLight intensity={0.4} />
@@ -43,9 +47,7 @@ export function InteractionRoom({
 
             {/* Click target used while in corridor */}
             {!entered && (
-                <RoomEntranceCollider
-                    onEnter={handleEnter}
-                />
+                    <RoomEntranceCollider onEnter={handleEnter}/>
             )}
 
             {/* Entrance wall + door */}
