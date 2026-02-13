@@ -10,16 +10,18 @@ export function EntranceWall({ color }: { color: string }) {
     const [opening, setOpening] = useState(false);
     const [visible, setVisible] = useState(true);
 
-    const WALL_WIDTH = 8;
-    const WALL_HEIGHT = 4;
-    const WALL_DEPTH = 0.2;
+    const WALL_WIDTH = 12;
+    const WALL_HEIGHT = 6;
+    const WALL_DEPTH = 0.15;
 
-    const DOOR_WIDTH = 1.5;
-    const DOOR_HEIGHT = 3.5;
+    const DOOR_WIDTH = 3;
+    const DOOR_HEIGHT = 4;
 
     const SIDE_WIDTH = (WALL_WIDTH - DOOR_WIDTH) / 2;
     const TOP_HEIGHT = WALL_HEIGHT - DOOR_HEIGHT;
 
+    const wallColor = color;
+    const doorColor = "#666666";
 
     const openAngle = THREE.MathUtils.degToRad(70);
     useFrame(() => {
@@ -39,11 +41,8 @@ export function EntranceWall({ color }: { color: string }) {
     });
     if (!visible) return null;
 
-    const wallColor = color;
-    const doorColor = "#666666";
-
     return (
-        <group position={[0, 0, 6]}>
+        <group position={[-1, -1, 3]}>
             {/* LEFT WALL */}
             <mesh position={[-DOOR_WIDTH / 2 - SIDE_WIDTH / 2, WALL_HEIGHT / 2, 0]}>
                 <boxGeometry args={[SIDE_WIDTH, WALL_HEIGHT, WALL_DEPTH]} />
@@ -65,7 +64,7 @@ export function EntranceWall({ color }: { color: string }) {
             {/* DOOR (hinged left) */}
             <group ref={doorRef} position={[-DOOR_WIDTH / 2, 0, 0]}>
                 <mesh
-                    position={[DOOR_WIDTH / 2 - 0.5, DOOR_HEIGHT / 2, 0.11 -0.5]}
+                    position={[DOOR_WIDTH / 2 - 1, DOOR_HEIGHT / 2, 0.11 -1.5]}
                     rotation={[0,openAngle, 0]}
                     onClick={() => setOpening(true)}
                 >
@@ -77,6 +76,32 @@ export function EntranceWall({ color }: { color: string }) {
                     />
                 </mesh>
             </group>
+        </group>
+    );
+}
+
+export function NormalWall({ color }: { color: string }) {
+    const [visible, setVisible] = useState(true);
+
+    const WALL_WIDTH = 6;
+    const WALL_HEIGHT = 6;
+    const WALL_DEPTH = 0.01;
+
+    const wallColor = color;
+
+    return (
+        <group position={[-1, 2, 0.5]} rotation={[0,1.5,0]}>
+            {/* LEFT SIDE */}
+            <mesh position={[0,0,-5.8]}>
+                <boxGeometry args={[WALL_WIDTH, WALL_HEIGHT, WALL_DEPTH]} />
+                <meshStandardMaterial color={wallColor} />
+            </mesh>
+
+            {/* RIGHT SIDE */}
+            <mesh position={[1,0,6.2]}>
+                <boxGeometry args={[WALL_WIDTH, WALL_HEIGHT, WALL_DEPTH]} />
+                <meshStandardMaterial color={wallColor} />
+            </mesh>
         </group>
     );
 }

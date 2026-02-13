@@ -11,11 +11,11 @@ export function RoomManager() {
         <>
             <Entrance position={[0, 0, 0]} />
             {/*Center room*/}
-            <InteractionRoom position={[0, -2, -20]} />
+            <InteractionRoom position={[1.5, -2, -25]} />
             {/*Left room*/}
-            <SystemRoom rotation={[0,1.5,0]} position={[-14, -2, -12]} />
+            <SystemRoom rotation={[0,1.570796,0]} position={[-10, -2, -17]} />
             {/*Right room*/}
-            <StoryRoom rotation={[0,-1.5,0]} position={[14, -2, -12]} />
+            <StoryRoom rotation={[0,-1.43,0]} position={[12, -2, -15]} />
 
             <Corridor />
 

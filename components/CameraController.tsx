@@ -5,7 +5,6 @@ import { useThree, useFrame } from "@react-three/fiber";
 import { useEffect, useState, useRef } from "react";
 import { rooms } from "@/lib/roomsConfig";
 import { getRoomIndex } from "@/lib/routeMapper";
-import gsap from "gsap";
 import * as THREE from "three";
 
 export function CameraController() {
@@ -35,7 +34,6 @@ export function CameraController() {
         };
 
         (window as any).exitRoom = () => {
-            console.log("inside exitroom")
             focusedRoomX.current = null;
         };
     }, []);
@@ -73,23 +71,19 @@ export function CameraController() {
         targetZ.current = rooms[roomIndex].position[2] + 5;
     }, [pathname, isCorridor]);
 
-    useEffect(() => {
-        if (isCorridor) return;
-
-        gsap.to(camera.position, {
-            x: 0,
-            y: 0,
-            duration: 1.2,
-            ease: "power2.out",
-        });
-    }, [isCorridor]);
-
     // --- rotation order for head movement ---
     useEffect(() => {
         camera.rotation.order = "YXZ";
     }, [camera]);
 
     useFrame(() => {
+        console.log("camera x position: ", camera.position.x)
+        console.log("camera y position: ", camera.position.y)
+        console.log("camera z position: ", camera.position.z)
+
+        console.log("camera x rotation: ", camera.rotation.x)
+        console.log("camera y rotation: ", camera.rotation.y)
+        console.log("camera z rotation: ", camera.rotation.z)
         if (mode.current === "orbit") {
 
             const targetX = mouse.x * viewport.width * 0.5;
@@ -115,7 +109,6 @@ export function CameraController() {
         }
 
         // 1. --- MOMENTUM WALKING ---
-        console.log("camera mode: ", mode.current);
         if (focusedRoomX.current === null) {
             if(mode.current === "focus") {
                 mode.current = "head";
@@ -180,24 +173,29 @@ export function CameraController() {
             // move forward into room
             camera.position.z = THREE.MathUtils.lerp(
                 camera.position.z,
-                room.z + 2,
+                room.z,
                 0.06
             );
 
             // rotate toward room
-            camera.lookAt(room.x, 0, room.z);
+            const target = new THREE.Vector3(room.x, 0, room.z);
+
+            const m = new THREE.Matrix4();
+            m.lookAt(camera.position, target, camera.up);
+
+            const targetQuat = new THREE.Quaternion();
+            targetQuat.setFromRotationMatrix(m);
+
+            camera.quaternion.slerp(targetQuat, 0.08);
         }
 
         if (mode.current === "orbit") {
-
-            console.log("camera mode orbit: ", mode.current);
             camera.lookAt(
                 camera.position.x * 0.2,
                 0,
                 camera.position.z - 5
             );
         } else if(mode.current === "head") {
-            console.log("camera mode head: ", mode.current);
             const MAX_YAW = Math.PI * 0.15;
             const MAX_PITCH = Math.PI * 0.1;
 
