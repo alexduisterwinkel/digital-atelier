@@ -2,7 +2,7 @@ import React, { useRef, useMemo, useState } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { Environment, Float, Text } from "@react-three/drei";
 import * as THREE from "three";
-import { EntranceWall } from "@/components/Corridor/EntranceWall";
+import { EntranceWall, NormalWall } from "@/components/Corridor/EntranceWall";
 import { ExitCollider, RoomEntranceCollider } from "@/components/Corridor/Collider";
 
 /**
@@ -16,6 +16,23 @@ export function InteractionRoom({
                                             position = [0, 0, 0] as [number, number, number],
                                         }) {
     const [entered, setEntered] = useState(false);
+    const focusTarget = useRef<THREE.Mesh>(null);
+
+    const handleEnter = () => {
+        if (!focusTarget.current) return;
+
+        // get WORLD position of focus anchor
+        const worldPos = new THREE.Vector3();
+        focusTarget.current.getWorldPosition(worldPos);
+
+        (window as any).enterRoom(worldPos.x, worldPos.z);
+        setEntered(true);
+    };
+
+    const handleExit = () => {
+        (window as any).exitRoom();
+        setEntered(false);
+    };
 
     return (
         <group position={position}>
@@ -27,13 +44,15 @@ export function InteractionRoom({
             {/* Click target used while in corridor */}
             {!entered && (
                 <RoomEntranceCollider
-                    onEnter={() => setEntered(true)}
+                    onEnter={handleEnter}
                 />
             )}
 
             {/* Entrance wall + door */}
             {!entered && <EntranceWall color={"#914b4a"}/>}
 
+
+            <NormalWall color={"orange"} />
             {/*<Floor />*/}
             <BackWall />
 
@@ -44,10 +63,11 @@ export function InteractionRoom({
 
             {/* Exit collider only exists while inside */}
             {entered && (
-                <ExitCollider onExit={() => setEntered(false)} />
+                <ExitCollider onExit={handleExit} />
             )}
 
             <Environment preset="city" />
+            <mesh ref={focusTarget} position={[0, 0, 2]} />
         </group>
     );
 }

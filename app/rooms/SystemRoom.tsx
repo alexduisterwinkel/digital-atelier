@@ -2,7 +2,7 @@ import React, { useRef, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import { Environment, Text } from "@react-three/drei";
 import * as THREE from "three";
-import { EntranceWall } from "@/components/Corridor/EntranceWall";
+import { EntranceWall, NormalWall } from "@/components/Corridor/EntranceWall";
 import { ExitCollider, RoomEntranceCollider } from "@/components/Corridor/Collider";
 
 /**
@@ -31,6 +31,7 @@ export function SystemRoom({
 
             {!entered && <EntranceWall color={"#5050ad"}/>}
 
+            <NormalWall color={"orange"}/>
             {/*<Floor />*/}
             <BackWall />
             <Title />

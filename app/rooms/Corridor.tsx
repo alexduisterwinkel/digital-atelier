@@ -2,7 +2,6 @@
 
 import { useRef } from "react";
 import * as THREE from "three";
-import { RoomPreview } from "@/app/rooms/RoomPreview";
 import { CorridorFog  } from "@/components/Corridor/CorridorFog";
 import { useThree } from "@react-three/fiber";
 
