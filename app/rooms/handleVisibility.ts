@@ -27,8 +27,6 @@ export function handleVisibility({
             1
         );
 
-        // roomRef.current.scale.setScalar(0.6 + visibility * 0.4);
-
         roomRef.current.traverse((child) => {
             if ((child as THREE.Mesh).isMesh) {
                 const mesh = child as THREE.Mesh;
