@@ -42,7 +42,7 @@ export function EntranceWall({ color }: { color: string }) {
     if (!visible) return null;
 
     return (
-        <group position={[-0.4, -1, 3]}>
+        <group position={[-0.4, -1, 3.1]}>
             {/* LEFT WALL */}
             <mesh position={[-DOOR_WIDTH / 2 - SIDE_WIDTH / 2, WALL_HEIGHT / 2, 0]}>
                 <boxGeometry args={[SIDE_WIDTH, WALL_HEIGHT, WALL_DEPTH]} />

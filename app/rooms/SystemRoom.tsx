@@ -45,7 +45,7 @@ export function SystemRoom({
 
             {!entered && <EntranceWall color={"#5050ad"}/>}
 
-            <NormalWall color={"orange"}/>
+            <NormalWall color={"#1e3559"}/>
             {/*<Floor />*/}
             <BackWall />
             <Title />

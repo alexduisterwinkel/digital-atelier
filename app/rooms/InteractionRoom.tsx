@@ -47,7 +47,7 @@ export function InteractionRoom({
             {!entered && <EntranceWall color={"#914b4a"}/>}
 
 
-            <NormalWall color={"orange"} />
+            <NormalWall color={"#1e3559"} />
             {/*<Floor />*/}
             <BackWall />
 

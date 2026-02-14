@@ -45,7 +45,7 @@ export function StoryRoom({
 
             {!entered && <EntranceWall color={"#549e52"}/>}
 
-            <NormalWall color={"orange"} />
+            <NormalWall color={"#1e3559"} />
 
             {/*<Floor />*/}
             <BackWall />
@@ -86,7 +86,7 @@ export function StoryRoom({
 
 function BackWall() {
     return (
-        <mesh position={[-0.4, 2, -3]}>
+        <mesh position={[0, 2, -3]}>
             <planeGeometry args={[12, 6]} />
             <meshStandardMaterial color="#140b12" />
         </mesh>

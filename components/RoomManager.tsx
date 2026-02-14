@@ -8,7 +8,7 @@ import { InteractionRoom } from "@/app/rooms/InteractionRoom";
 export function RoomManager() {
     return (
         <>
-            <Entrance position={[0, 0, 5]} />
+            <Entrance position={[0, 0, 0]} />
             {/*Center room*/}
             <InteractionRoom position={[1.5, -2, -27]} />
             {/*Left room*/}
