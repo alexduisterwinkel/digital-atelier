@@ -4,6 +4,8 @@ import { Environment, Text } from "@react-three/drei";
 import * as THREE from "three";
 import { EntranceWall, NormalWall } from "@/components/Corridor/EntranceWall";
 import { ExitCollider, RoomEntranceCollider } from "@/components/Corridor/Collider";
+import { handleCollider } from "@/app/rooms/handleCollider";
+import { handleVisibility } from "@/app/rooms/handleVisibility";
 
 /**
  * SYSTEMS ROOM
@@ -18,26 +20,17 @@ export function SystemRoom({
                                     }) {
     const [entered, setEntered] = useState(false);
     const roomRef = useRef<THREE.Group>(null);
-
     const focusTarget = useRef<THREE.Mesh>(null);
-    const handleEnter = () => {
-        if (!focusTarget.current || !roomRef.current) return;
 
-        // get WORLD position of focus anchor
-        const worldPos = new THREE.Vector3();
-        focusTarget.current.getWorldPosition(worldPos);
+    const { handleEnter, handleExit } = handleCollider({
+        roomRef,
+        focusTarget,
+        setEntered,
+    });
 
-        const roomQuat = new THREE.Quaternion();
-        roomRef.current.getWorldQuaternion(roomQuat);
-
-        (window as any).enterRoom(worldPos.x, worldPos.z, roomQuat);
-        setEntered(true);
-    };
-
-    const handleExit = () => {
-        (window as any).exitRoom();
-        setEntered(false);
-    };
+    handleVisibility({
+        roomRef,
+    });
 
     return (
         <group ref={roomRef} position={position} rotation={rotation}>

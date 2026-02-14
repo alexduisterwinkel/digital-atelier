@@ -81,8 +81,6 @@ export function EntranceWall({ color }: { color: string }) {
 }
 
 export function NormalWall({ color }: { color: string }) {
-    const [visible, setVisible] = useState(true);
-
     const WALL_WIDTH = 6;
     const WALL_HEIGHT = 6;
     const WALL_DEPTH = 0.1;

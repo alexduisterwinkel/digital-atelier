@@ -17,14 +17,15 @@ export function RoomEntranceCollider({
 }) {
     return (
         <mesh
-            position={[-1, 2, 3.1]}
+            userData={{ ignoreRoomFade: true }}
+            position={[-0.5, 2, 3.1]}
             onClick={(e) => {
                 console.log("collider clicked");
                 e.stopPropagation();
                 onEnter();
             }}
         >
-            <boxGeometry args={[12 , 6, 0]} />
+            <planeGeometry args={[12 , 6]} />
             <meshBasicMaterial transparent opacity={0} />
         </mesh>
     );
@@ -39,7 +40,8 @@ export function RoomEntranceCollider({
 export function ExitCollider({ onExit }: { onExit: () => void }) {
     return (
         <mesh
-            position={[0, 1.2, 4]}
+            userData={{ ignoreRoomFade: true }}
+            position={[-0.5, 2, 3.1]}
             onClick={(e) => {
                 e.stopPropagation();
 
@@ -50,7 +52,7 @@ export function ExitCollider({ onExit }: { onExit: () => void }) {
                 onExit();
             }}
         >
-            <planeGeometry args={[10, 6]} />
+            <planeGeometry args={[12, 6]} />
             <meshBasicMaterial transparent opacity={0} />
         </mesh>
     );
