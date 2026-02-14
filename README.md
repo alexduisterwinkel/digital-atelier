@@ -1,36 +1,45 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+## Digital Atelier
 
-## Getting Started
+This is a spatial portfolio built as an interactive 3D environment rather than a traditional website.
 
-First, run the development server:
+**Key aspects to notice:**
+
+- **Navigation as experience**  
+  Movement through the space replaces page-based navigation. Scrolling, camera momentum, and spatial transitions guide exploration.
+
+- **Systems thinking in presentation**  
+  Projects are shown as modular elements that can be filtered, focused, and explored instead of static case study pages.
+
+- **Interaction-driven design**  
+  Camera behavior, fog, lighting, and motion respond to user input to create a living environment.
+
+- **Design and engineering integration**  
+  The project combines interaction design, real-time rendering, and frontend architecture into one cohesive system.
+
+The atelier is intended to demonstrate how digital work can be experienced, not only viewed.
+
+**Concept:**
+
+The Digital Atelier is structured as a virtual studio composed of three rooms, each representing a different discipline: 
+- InteractionRoom. play with moving objects
+- SystemsRoom: an visual representation of how systems are connected and work together.
+- StoryRoom: Inspiration by different small stories
+
+
+**Navigation Philosophy**
+The experience is built around movement rather than menus.
+The user walks through a corridor using scroll-driven momentum.
+Entrance fog creates depth and movement, allowing rooms and text to subtly shift and feel alive.
+Rooms are previewed before entering, encouraging exploration.
+Clicking a room transitions the camera into a focused mode.
+Inside a room, camera motion is fixed to allow interaction with content.
+Exiting returns the user seamlessly to the corridor.
+The environment behaves like a continuous space rather than a sequence of screens.
+
+## Run Locally
 
 ```bash
+git clone <repo-url>
+cd dev-log
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
