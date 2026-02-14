@@ -42,7 +42,7 @@ export function EntranceWall({ color }: { color: string }) {
     if (!visible) return null;
 
     return (
-        <group position={[-1, -1, 3]}>
+        <group position={[-0.4, -1, 3]}>
             {/* LEFT WALL */}
             <mesh position={[-DOOR_WIDTH / 2 - SIDE_WIDTH / 2, WALL_HEIGHT / 2, 0]}>
                 <boxGeometry args={[SIDE_WIDTH, WALL_HEIGHT, WALL_DEPTH]} />
@@ -85,12 +85,12 @@ export function NormalWall({ color }: { color: string }) {
 
     const WALL_WIDTH = 6;
     const WALL_HEIGHT = 6;
-    const WALL_DEPTH = 0.01;
+    const WALL_DEPTH = 0.1;
 
     const wallColor = color;
 
     return (
-        <group position={[-1, 2, 0.5]} rotation={[0,1.5,0]}>
+        <group position={[-0.4, 2, 0.5]} rotation={[0,1.5,0]}>
             {/* LEFT SIDE */}
             <mesh position={[0,0,-5.8]}>
                 <boxGeometry args={[WALL_WIDTH, WALL_HEIGHT, WALL_DEPTH]} />

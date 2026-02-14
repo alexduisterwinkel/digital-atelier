@@ -13,9 +13,9 @@ export function RoomManager() {
             {/*Center room*/}
             <InteractionRoom position={[1.5, -2, -25]} />
             {/*Left room*/}
-            <SystemRoom rotation={[0,1.570796,0]} position={[-10, -2, -17]} />
+            <SystemRoom rotation={[0,1.570796,0]} position={[-8, -2, -16.3]} />
             {/*Right room*/}
-            <StoryRoom rotation={[0,-1.43,0]} position={[12, -2, -15]} />
+            <StoryRoom rotation={[0,-1.5707963,0]} position={[10.1, -2, -15.5]} />
 
             <Corridor />
 

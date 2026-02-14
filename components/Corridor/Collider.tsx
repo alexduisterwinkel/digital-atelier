@@ -25,7 +25,7 @@ export function RoomEntranceCollider({
             }}
         >
             <boxGeometry args={[12 , 6, 0]} />
-            <meshBasicMaterial opacity={0} color={"red"}/>
+            <meshBasicMaterial transparent opacity={0} />
         </mesh>
     );
 }
